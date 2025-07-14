@@ -46,8 +46,51 @@ def build_vector_store(bot_name: str):
 
     faiss.write_index(index, f"{VECTOR_STORE_DIR}/{bot_name}.index")
 
-    # Save metadata separately
+    # Save metadata
     with open(f"{VECTOR_STORE_DIR}/{bot_name}_meta.json", "w", encoding="utf-8") as meta_file:
         json.dump(metadata, meta_file, indent=2)
 
     print(f"✅ Vector store built for {bot_name}")
+
+# === Load + Query Vector Store ===
+def load_vector_store(bot_name: str, query: str, top_k: int = 3) -> list[str]:
+    index_path = f"{VECTOR_STORE_DIR}/{bot_name}.index"
+    meta_path = f"{VECTOR_STORE_DIR}/{bot_name}_meta.json"
+
+    if not os.path.exists(index_path) or not os.path.exists(meta_path):
+        raise FileNotFoundError("Vector store not found. Please build it first.")
+
+    # Load FAISS index
+    index = faiss.read_index(index_path)
+
+    # Load metadata
+    with open(meta_path, "r", encoding="utf-8") as f:
+        metadata = json.load(f)
+
+    # Embed query
+    query_vec = embed_text(query)
+    D, I = index.search(np.array([query_vec]).astype('float32'), top_k)
+
+    # Get top chunks
+    top_chunks = [metadata[i]["text"] for i in I[0]]
+    return top_chunks
+
+# === Answer Generation ===
+def answer_question(query: str, context_chunks: list[str]) -> str:
+    context = "\n\n".join(context_chunks)
+
+    prompt = f"""
+You are a helpful assistant. Use the following context to answer the question.
+
+Context:
+{context}
+
+Question: {query}
+Answer:"""
+
+    response = client.chat.completions.create(
+        model="gpt-3.5-turbo",
+        messages=[{"role": "user", "content": prompt}],
+        temperature=0.2
+    )
+    return response.choices[0].message.content.strip()
