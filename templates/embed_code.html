@@ -91,6 +91,22 @@
       color: #f8fafc;
       font-size: 14px;
     }
+
+    .test-bot {
+      display: inline-block;
+      margin-top: 20px;
+      background-color: #10b981;
+      color: white;
+      padding: 12px 20px;
+      font-weight: bold;
+      text-decoration: none;
+      border-radius: 10px;
+      transition: background 0.2s ease;
+    }
+
+    .test-bot:hover {
+      background-color: #059669;
+    }
   </style>
 </head>
 <body>
@@ -147,6 +163,8 @@
     {% if embed_code %}
       <h3>✅ Embed this code in your website:</h3>
       <code>{{ embed_code }}</code>
+
+      <a class="test-bot" href="/chatbot/{{ client_id }}">🧪 Test Your Bot</a>
     {% endif %}
   </div>
 </body>

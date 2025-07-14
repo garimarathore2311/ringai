@@ -1,12 +1,9 @@
-# routers/user.py
-
 from fastapi import APIRouter, Request, Form, UploadFile, File
 from fastapi.responses import HTMLResponse
 from fastapi.templating import Jinja2Templates
 from utils.code_generator import generate_embed_code
 from utils.file_parser import extract_text_from_pdf, extract_text_from_excel
 from utils.web_scraper import scrape_website
-from rag_engine import build_vector_store
 import uuid
 import os
 import json
@@ -62,7 +59,7 @@ async def register_user(
     with open(raw_path, "w", encoding="utf-8") as text_file:
         text_file.write(full_text)
 
-    # 4. Save user metadata (include preview of scraped text)
+    # 4. Save user metadata
     user_data = {
         "client_id": client_id,
         "name": name,
@@ -79,14 +76,16 @@ async def register_user(
     with open(f"{UPLOAD_DIR}/{bot_name}_meta.json", "w", encoding="utf-8") as json_file:
         json.dump(user_data, json_file, indent=2)
 
-    # 5. Build vector store (embedding phase)
+    # 5. Build vector store — import inside the function to avoid circular import
+    from rag_engine import build_vector_store
     build_vector_store(bot_name)
 
-    # Optional: store in in-memory DB
+    # Store user data in memory (optional)
     user_db[client_id] = user_data
 
     embed_code = generate_embed_code(client_id)
     return templates.TemplateResponse("embed_code.html", {
         "request": request,
-        "embed_code": embed_code
+        "embed_code": embed_code,
+        "client_id": client_id  # ✅ Add this for "Test Your Bot" button
     })

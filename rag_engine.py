@@ -14,6 +14,14 @@ client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 VECTOR_STORE_DIR = "vectorstores"
 os.makedirs(VECTOR_STORE_DIR, exist_ok=True)
 
+# ✅ NO circular import here — removed: from rag_engine import load_vector_store, answer_question
+
+# === Chatbot Entry Point ===
+def query_bot(bot_name: str, question: str) -> str:
+    context_chunks = load_vector_store(bot_name, question)
+    return answer_question(question, context_chunks)
+
+# === Embedding Function ===
 def embed_text(text: str) -> list[float]:
     response = client.embeddings.create(
         input=[text],
@@ -21,6 +29,7 @@ def embed_text(text: str) -> list[float]:
     )
     return response.data[0].embedding
 
+# === Vector Store Builder ===
 def build_vector_store(bot_name: str):
     raw_path = f"uploads/{bot_name}_raw.txt"
     if not os.path.exists(raw_path):
@@ -75,7 +84,7 @@ def load_vector_store(bot_name: str, query: str, top_k: int = 3) -> list[str]:
     top_chunks = [metadata[i]["text"] for i in I[0]]
     return top_chunks
 
-# === Answer Generation ===
+# === Answer Generator ===
 def answer_question(query: str, context_chunks: list[str]) -> str:
     context = "\n\n".join(context_chunks)
 

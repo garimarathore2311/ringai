@@ -4,10 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from routers import user
+from routers import user, chat, chat_ui  # <-- ✅ this line
+
 
 app = FastAPI()
-
+import os
+os.makedirs("uploads", exist_ok=True)
 # Allow frontend access
 app.add_middleware(
     CORSMiddleware,
@@ -21,8 +23,10 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 templates = Jinja2Templates(directory="templates")
 
+
 # Include Routes
 app.include_router(user.router)
+app.include_router(chat_ui.router)
 
 @app.get("/")
 def read_root():
