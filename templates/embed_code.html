@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>SmartBotHub - Onboarding</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 40px;
+      font-family: 'Segoe UI', Tahoma, sans-serif;
+      background-color: #0f172a;
+      display: flex;
+      justify-content: center;
+      color: #f1f5f9;
+    }
+
+    .container {
+      background-color: #1e293b;
+      padding: 40px;
+      border-radius: 20px;
+      max-width: 700px;
+      width: 100%;
+      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.6);
+      animation: fadeIn 0.5s ease;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    h1 {
+      font-size: 28px;
+      color: #c084fc;
+      margin-bottom: 10px;
+    }
+
+    p {
+      color: #cbd5e1;
+      margin-bottom: 25px;
+    }
+
+    label {
+      display: block;
+      margin-top: 18px;
+      font-weight: 600;
+      color: #e2e8f0;
+    }
+
+    input, select, textarea {
+      width: 100%;
+      padding: 12px 14px;
+      margin-top: 6px;
+      background-color: #334155;
+      border: 1px solid #475569;
+      border-radius: 12px;
+      font-size: 15px;
+      color: #f8fafc;
+      transition: border 0.2s;
+    }
+
+    input:focus, select:focus, textarea:focus {
+      border-color: #a855f7;
+      outline: none;
+    }
+
+    button {
+      margin-top: 30px;
+      background: linear-gradient(to right, #7b2ff7, #f107a3);
+      color: white;
+      padding: 14px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      border: none;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background: linear-gradient(to right, #601bc3, #c31479);
+    }
+
+    code {
+      display: block;
+      background: #334155;
+      padding: 16px;
+      border-radius: 12px;
+      margin-top: 24px;
+      font-family: monospace;
+      color: #f8fafc;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🌙 Get Your SmartBotHub Chatbot</h1>
+    <p>Answer a few quick questions to get your chatbot embed code.</p>
+
+    <form action="/register" method="post" enctype="multipart/form-data">
+      <label>Your Name:
+        <input type="text" name="name" required>
+      </label>
+
+      <label>Email Address:
+        <input type="email" name="email" required>
+      </label>
+
+      <label>Website URL:
+        <input type="url" name="website" required>
+      </label>
+
+      <label>What is your chatbot for?
+        <select name="purpose">
+          <option value="Customer Support">Customer Support</option>
+          <option value="Lead Generation">Lead Generation</option>
+          <option value="Product Q&A">Product Q&A</option>
+          <option value="Documentation Bot">Documentation Bot</option>
+          <option value="Other">Other</option>
+        </select>
+      </label>
+
+      <label>What kind of questions should it answer?
+        <textarea name="question_type" rows="3" placeholder="e.g. pricing, usage, return policy..." required></textarea>
+      </label>
+
+      <label>Preferred Bot Tone:
+        <select name="tone">
+          <option value="Friendly">Friendly</option>
+          <option value="Professional">Professional</option>
+          <option value="Neutral">Neutral</option>
+        </select>
+      </label>
+
+      <label>Bot Name (optional):
+        <input type="text" name="bot_name" placeholder="e.g. Smartie">
+      </label>
+
+      <label>Upload Files (PDF, Excel):
+        <input type="file" name="file" multiple>
+      </label>
+
+      <button type="submit">🚀 Generate My Chatbot</button>
+    </form>
+
+    {% if embed_code %}
+      <h3>✅ Embed this code in your website:</h3>
+      <code>{{ embed_code }}</code>
+    {% endif %}
+  </div>
+</body>
+</html>
