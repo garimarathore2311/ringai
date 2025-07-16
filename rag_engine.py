@@ -46,7 +46,7 @@ def answer_question(query: str, context_chunks: list[str]) -> str:
                 {"role": "system", "content": "You are a helpful assistant who only answers using the context provided."},
                 {"role": "user", "content": prompt}
             ],
-            temperature=0.7  # more natural tone
+            temperature=0.7
         )
         answer = response.choices[0].message.content.strip()
         if not answer or answer.lower() in ["undefined", "none"]:
@@ -59,12 +59,15 @@ def answer_question(query: str, context_chunks: list[str]) -> str:
 
 # === Build the FAISS vector store from raw text ===
 def build_vector_store(bot_name: str):
-    raw_path = f"uploads/{bot_name}_raw.txt"
+    raw_path = f"uploads/{bot_name}/raw_text.txt"
     if not os.path.exists(raw_path):
-        raise FileNotFoundError("No raw text file found.")
+        raise FileNotFoundError(f"❌ No raw text file found at {raw_path}")
 
     with open(raw_path, "r", encoding="utf-8") as f:
         full_text = f.read()
+    
+    print(f"📄 Building vector store for bot: {bot_name}")
+    print(f"📦 Total characters to embed: {len(full_text)}")
 
     chunks = split_into_chunks(full_text)
     embeddings = []
@@ -74,19 +77,21 @@ def build_vector_store(bot_name: str):
         emb = embed_text(chunk)
         embeddings.append(emb)
         metadata.append({"id": i, "text": chunk})
+        print(f"✅ Chunk {i+1}/{len(chunks)} embedded")
 
-    # Save FAISS index
     dim = len(embeddings[0])
     index = faiss.IndexFlatL2(dim)
     index.add(np.array(embeddings).astype('float32'))
 
-    faiss.write_index(index, f"{VECTOR_STORE_DIR}/{bot_name}.index")
+    index_path = f"{VECTOR_STORE_DIR}/{bot_name}.index"
+    meta_path = f"{VECTOR_STORE_DIR}/{bot_name}_meta.json"
 
-    # Save metadata
-    with open(f"{VECTOR_STORE_DIR}/{bot_name}_meta.json", "w", encoding="utf-8") as meta_file:
+    faiss.write_index(index, index_path)
+    with open(meta_path, "w", encoding="utf-8") as meta_file:
         json.dump(metadata, meta_file, indent=2)
 
-    print(f"✅ Vector store built for {bot_name}")
+    print(f"🧠 Vector index saved at: {index_path}")
+    print(f"📑 Metadata saved at: {meta_path}")
 
 # === Load the vector store and return top-k chunks ===
 def load_vector_store(bot_name: str, query: str, top_k: int = 3) -> list[str]:
@@ -94,8 +99,9 @@ def load_vector_store(bot_name: str, query: str, top_k: int = 3) -> list[str]:
     meta_path = f"{VECTOR_STORE_DIR}/{bot_name}_meta.json"
 
     if not os.path.exists(index_path) or not os.path.exists(meta_path):
-        raise FileNotFoundError("Vector store not found. Please build it first.")
+        raise FileNotFoundError("❌ Vector store not found. Please build it first.")
 
+    print(f"🔍 Loading vector store for bot: {bot_name}")
     index = faiss.read_index(index_path)
 
     with open(meta_path, "r", encoding="utf-8") as f:
@@ -105,9 +111,11 @@ def load_vector_store(bot_name: str, query: str, top_k: int = 3) -> list[str]:
     D, I = index.search(np.array([query_vec]).astype('float32'), top_k)
 
     top_chunks = [metadata[i]["text"] for i in I[0]]
+    print(f"🎯 Top {top_k} chunks retrieved for query: \"{query}\"")
     return top_chunks
 
 # === Main entry point to query the bot ===
 def query_bot(bot_name: str, question: str) -> str:
+    print(f"💬 Querying bot: {bot_name} | Question: {question}")
     context_chunks = load_vector_store(bot_name, question)
     return answer_question(question, context_chunks)
