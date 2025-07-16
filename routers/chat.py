@@ -22,7 +22,7 @@ async def chat_with_bot(data: ChatRequest):
     }
     """
     answer = query_bot(data.bot_name, data.question)
-    return {"answer": answer}
+    return {"response": answer}  # ✅ Unified response key
 
 # Optional advanced endpoint (loads and answers in separate steps)
 @router.post("/chat/{bot_name}")
@@ -35,4 +35,4 @@ async def chat(bot_name: str, query: ChatQuery):
     """
     context_chunks = load_vector_store(bot_name, query.question)
     answer = answer_question(query.question, context_chunks)
-    return {"answer": answer}
+    return {"response": answer}  # ✅ Unified response key

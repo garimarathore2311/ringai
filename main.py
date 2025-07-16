@@ -10,6 +10,7 @@ from routers import user, chat, chat_ui  # <-- ✅ this line
 app = FastAPI()
 import os
 os.makedirs("uploads", exist_ok=True)
+os.path.exists("uploads/abfa8742-ec9a-43fb-bd46-0c62d0aae0f0_meta.json")
 # Allow frontend access
 app.add_middleware(
     CORSMiddleware,
@@ -27,6 +28,7 @@ templates = Jinja2Templates(directory="templates")
 # Include Routes
 app.include_router(user.router)
 app.include_router(chat_ui.router)
+app.include_router(chat.router)
 
 @app.get("/")
 def read_root():

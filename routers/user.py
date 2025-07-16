@@ -55,7 +55,7 @@ async def register_user(
         full_text += "\n" + scraped_text
 
     # 3. Save combined raw text
-    raw_path = f"{UPLOAD_DIR}/{bot_name}_raw.txt"
+    raw_path = f"{UPLOAD_DIR}/{client_id}_raw.txt"
     with open(raw_path, "w", encoding="utf-8") as text_file:
         text_file.write(full_text)
 
@@ -73,7 +73,8 @@ async def register_user(
         "scraped_text_preview": scraped_text[:1000] if scraped_text else None
     }
 
-    with open(f"{UPLOAD_DIR}/{bot_name}_meta.json", "w", encoding="utf-8") as json_file:
+    with open(f"{UPLOAD_DIR}/{client_id}_meta.json", "w", encoding="utf-8") as json_file:
+
         json.dump(user_data, json_file, indent=2)
 
     # 5. Build vector store — import inside the function to avoid circular import

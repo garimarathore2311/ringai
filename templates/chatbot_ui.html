@@ -4,11 +4,35 @@
   <title>{{ bot_name }} - Chatbot</title>
   <style>
     body { font-family: Arial; margin: 2em; }
-    .chat-box { width: 400px; height: 500px; border: 1px solid #ccc; padding: 1em; overflow-y: auto; }
-    .input-box { margin-top: 1em; }
+    .chat-box {
+      width: 400px;
+      height: 500px;
+      border: 1px solid #ccc;
+      padding: 1em;
+      overflow-y: auto;
+      background-color: #f9f9f9;
+    }
+    .input-box {
+      margin-top: 1em;
+    }
     .msg { margin: 0.5em 0; }
     .user { font-weight: bold; color: #2c3e50; }
     .bot { color: #16a085; }
+    input[type="text"] {
+      padding: 0.5em;
+      font-size: 1em;
+    }
+    button {
+      padding: 0.5em 1em;
+      font-size: 1em;
+      background-color: #16a085;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #138d75;
+    }
   </style>
 </head>
 <body>
@@ -20,23 +44,35 @@
   </div>
 
   <script>
+    const input = document.getElementById("question");
+    input.focus();
+
     async function send() {
       const chat = document.getElementById("chat");
-      const input = document.getElementById("question");
-      const text = input.value;
+      const text = input.value.trim();
       if (!text) return;
 
       chat.innerHTML += `<div class="msg user">You: ${text}</div>`;
       input.value = "";
+      input.focus();
+      chat.scrollTop = chat.scrollHeight;
 
-      const res = await fetch("/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ bot_name: "{{ bot_name }}", question: text })
-      });
+      try {
+        const res = await fetch("/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ bot_name: "{{ bot_name }}", question: text })
+        });
 
-      const data = await res.json();
-      chat.innerHTML += `<div class="msg bot">Bot: ${data.answer}</div>`;
+        if (!res.ok) throw new Error("Request failed");
+
+        const data = await res.json();
+        chat.innerHTML += `<div class="msg bot">Bot: ${data.response}</div>`;
+      } catch (err) {
+        chat.innerHTML += `<div class="msg bot">❌ Bot: Sorry, something went wrong.</div>`;
+        console.error(err);
+      }
+
       chat.scrollTop = chat.scrollHeight;
     }
   </script>
