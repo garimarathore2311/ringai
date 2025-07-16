@@ -2,55 +2,68 @@
 
 import tiktoken
 import nltk
-nltk.download('punkt')
 from nltk.tokenize import sent_tokenize
 
-def split_into_chunks(text, max_tokens=500, overlap=50):
+import os
+
+# Ensure custom nltk path is added
+nltk.data.path.append(os.path.join(os.getcwd(), "nltk_data"))
+
+# Download punkt only if missing
+try:
+    nltk.data.find("tokenizers/punkt")
+except LookupError:
+    nltk.download("punkt")
+
+def split_into_chunks(text: str, max_tokens: int = 500, overlap: int = 50) -> list[str]:
     """
-    Sentence-aware token-limited chunking with overlap.
+    Splits input text into sentence-based chunks, each limited by token count,
+    with configurable overlap for better context retention.
 
     Args:
-        text (str): The full input text.
-        max_tokens (int): Max token count per chunk.
-        overlap (int): Approximate number of tokens to retain from the end of the previous chunk.
-    
+        text (str): The input full text to split.
+        max_tokens (int): Maximum tokens per chunk (default: 500).
+        overlap (int): Number of overlapping tokens to retain from the previous chunk (default: 50).
+
     Returns:
-        List[str]: A list of well-formed text chunks.
+        list[str]: List of text chunks.
     """
     encoding = tiktoken.get_encoding("cl100k_base")
     sentences = sent_tokenize(text)
 
     chunks = []
     current_chunk = []
-    total_tokens = 0
+    current_token_count = 0
+    token_cache = [encoding.encode(s) for s in sentences]
 
-    for sentence in sentences:
-        sent_tokens = encoding.encode(sentence)
-        token_len = len(sent_tokens)
+    for sentence, tokens in zip(sentences, token_cache):
+        token_len = len(tokens)
 
-        if total_tokens + token_len > max_tokens:
-            # Save current chunk
+        # If adding this sentence exceeds limit, finalize current chunk
+        if current_token_count + token_len > max_tokens:
             chunks.append(" ".join(current_chunk))
 
-            # Add overlap
-            overlap_tokens = 0
+            # Prepare next chunk with overlap
             overlap_chunk = []
+            overlap_tokens = 0
             for prev_sent in reversed(current_chunk):
-                prev_token_len = len(encoding.encode(prev_sent))
-                if overlap_tokens + prev_token_len > overlap:
+                prev_tokens = encoding.encode(prev_sent)
+                if overlap_tokens + len(prev_tokens) > overlap:
                     break
                 overlap_chunk.insert(0, prev_sent)
-                overlap_tokens += prev_token_len
+                overlap_tokens += len(prev_tokens)
 
-            # Start new chunk
             current_chunk = overlap_chunk + [sentence]
-            total_tokens = sum(len(encoding.encode(s)) for s in current_chunk)
+            current_token_count = sum(len(encoding.encode(s)) for s in current_chunk)
         else:
             current_chunk.append(sentence)
-            total_tokens += token_len
+            current_token_count += token_len
 
+    # Add remaining chunk
     if current_chunk:
         chunks.append(" ".join(current_chunk))
+
+
 
     print(f"🧩 Created {len(chunks)} sentence-based chunks (max_tokens={max_tokens}, overlap={overlap})")
     return chunks
