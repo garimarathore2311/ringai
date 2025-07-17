@@ -1,19 +1,18 @@
 # utils/chunker.py
 
 import tiktoken
-import nltk
-from nltk.tokenize import sent_tokenize
-
+import spacy
 import os
 
-# Ensure custom nltk path is added
-nltk.data.path.append(os.path.join(os.getcwd(), "nltk_data"))
+# Load spaCy English model
+nlp = spacy.load("en_core_web_sm")
 
-# Download punkt only if missing
-try:
-    nltk.data.find("tokenizers/punkt")
-except LookupError:
-    nltk.download("punkt")
+def sent_tokenize(text: str) -> list[str]:
+    """
+    Tokenizes input text into sentences using spaCy.
+    """
+    doc = nlp(text)
+    return [sent.text.strip() for sent in doc.sents]
 
 def split_into_chunks(text: str, max_tokens: int = 500, overlap: int = 50) -> list[str]:
     """
@@ -62,8 +61,6 @@ def split_into_chunks(text: str, max_tokens: int = 500, overlap: int = 50) -> li
     # Add remaining chunk
     if current_chunk:
         chunks.append(" ".join(current_chunk))
-
-
 
     print(f"🧩 Created {len(chunks)} sentence-based chunks (max_tokens={max_tokens}, overlap={overlap})")
     return chunks
