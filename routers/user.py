@@ -41,20 +41,33 @@ async def register_user(
 
     # 1. Extract text from uploaded files
     for f in file:
-        file_path = os.path.join(UPLOAD_DIR, f.filename)
-        with open(file_path, "wb") as out_file:
-            out_file.write(await f.read())
-        saved_files.append(file_path)
-        print(f"✅ Saved file: {file_path}")
+        if not f.filename or f.filename.strip() == "":
+            print("⚠️ Skipping file with empty filename.")
+            continue
 
-        if f.filename.endswith(".pdf"):
-            extracted = extract_text_from_pdf(file_path)
-            print(f"🔍 Extracted {len(extracted)} characters from PDF.")
-            full_text += extracted
-        elif f.filename.endswith((".xls", ".xlsx")):
-            extracted = extract_text_from_excel(file_path)
-            print(f"🔍 Extracted {len(extracted)} characters from Excel.")
-            full_text += extracted
+        file_path = os.path.join(UPLOAD_DIR, f.filename)
+
+        # Prevent writing to a directory
+        if os.path.isdir(file_path):
+            print(f"⚠️ Skipping invalid file path (is a directory): {file_path}")
+            continue
+
+        try:
+            with open(file_path, "wb") as out_file:
+                out_file.write(await f.read())
+            saved_files.append(file_path)
+            print(f"✅ Saved file: {file_path}")
+
+            if f.filename.endswith(".pdf"):
+                extracted = extract_text_from_pdf(file_path)
+                print(f"🔍 Extracted {len(extracted)} characters from PDF.")
+                full_text += extracted
+            elif f.filename.endswith((".xls", ".xlsx")):
+                extracted = extract_text_from_excel(file_path)
+                print(f"🔍 Extracted {len(extracted)} characters from Excel.")
+                full_text += extracted
+        except Exception as e:
+            print(f"❌ Error saving or processing file {f.filename}: {e}")
 
     # 2. Scrape website content and append to text
     print(f"🌐 Scraping website: {website}")
