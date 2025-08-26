@@ -1,18 +1,40 @@
 # main.py
+import os  # <-- Move this to the top
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
-from routers import user, chat, chat_ui  # <-- ✅ this line
+from routers import user, chat, chat_ui
 import spacy.cli
 spacy.cli.download("en_core_web_sm")
 
+from dotenv import load_dotenv
+from openai import OpenAI
+from openai import AzureOpenAI
+
+# ---------- Env & Client ----------
+load_dotenv()
+
+AOAI_ENDPOINT = os.getenv("AZURE_OPENAI_ENDPOINT")
+AOAI_KEY = os.getenv("AZURE_OPENAI_API_KEY") or os.getenv("AZURE_OPENAI_KEY")
+AOAI_API_VERSION = os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
+AOAI_DEPLOYMENT = os.getenv("AZURE_OPENAI_DEPLOYMENT")
+
+if not (AOAI_ENDPOINT and AOAI_KEY and AOAI_DEPLOYMENT):
+    raise RuntimeError("Set AZURE_OPENAI_ENDPOINT, AZURE_OPENAI_API_KEY, AZURE_OPENAI_DEPLOYMENT in .env")
+
+client = AzureOpenAI(
+    api_key=AOAI_KEY,
+    azure_endpoint=AOAI_ENDPOINT,
+    api_version=AOAI_API_VERSION
+)
 
 app = FastAPI()
-import os
 os.makedirs("uploads", exist_ok=True)
-os.path.exists("uploads/abfa8742-ec9a-43fb-bd46-0c62d0aae0f0_meta.json")
+# os.path.exists("uploads/abfa8742-ec9a-43fb-bd46-0c62d0aae0f0_meta.json")  # <-- Remove or comment out
+
 # Allow frontend access
 app.add_middleware(
     CORSMiddleware,
@@ -35,5 +57,9 @@ app.include_router(chat.router)
 @app.get("/")
 def read_root():
     return {"msg": "Welcome to GarimaBot!"}
+
+@app.get("/assistants")
+def get_assistants():
+    return {"msg": "Assistants endpoint is working"}
 
 

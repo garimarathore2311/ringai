@@ -2,13 +2,17 @@ import os
 import faiss
 import json
 import numpy as np
-from openai import OpenAI
+from openai import AzureOpenAI
 from utils.chunker import split_into_chunks
 from dotenv import load_dotenv
 
 # === Load environment variables ===
 load_dotenv()
-client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+client = AzureOpenAI(
+    api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+    azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+    api_version=os.getenv("AZURE_OPENAI_API_VERSION", "2024-02-15-preview")
+)
 
 VECTOR_STORE_DIR = "vectorstores"
 os.makedirs(VECTOR_STORE_DIR, exist_ok=True)
@@ -17,7 +21,7 @@ os.makedirs(VECTOR_STORE_DIR, exist_ok=True)
 def embed_text(text: str) -> list[float]:
     response = client.embeddings.create(
         input=[text],
-        model="text-embedding-3-small"
+        model=os.getenv("AZURE_OPENAI_DEPLOYMENT")  # Use deployment name, not model name
     )
     return response.data[0].embedding
 
@@ -61,15 +65,18 @@ def answer_question(query: str, context_chunks: list[str]) -> str:
 def build_vector_store(bot_name: str):
     raw_path = f"uploads/{bot_name}/raw_text.txt"
     if not os.path.exists(raw_path):
-        raise FileNotFoundError(f"❌ No raw text file found at {raw_path}")
+        raise FileNotFoundError(f"No raw text file found at {raw_path}")
 
     with open(raw_path, "r", encoding="utf-8") as f:
         full_text = f.read()
-    
-    print(f"📄 Building vector store for bot: {bot_name}")
-    print(f"📦 Total characters to embed: {len(full_text)}")
 
+    print(f"Total characters in raw text: {len(full_text)}")  # Debug
     chunks = split_into_chunks(full_text)
+    print(f"Chunks generated: {len(chunks)}")  # Debug
+
+    if not chunks:
+        raise ValueError("No text chunks generated. Check your raw text file and chunking logic.")
+
     embeddings = []
     metadata = []
 
@@ -77,7 +84,6 @@ def build_vector_store(bot_name: str):
         emb = embed_text(chunk)
         embeddings.append(emb)
         metadata.append({"id": i, "text": chunk})
-        print(f"✅ Chunk {i+1}/{len(chunks)} embedded")
 
     dim = len(embeddings[0])
     index = faiss.IndexFlatL2(dim)
